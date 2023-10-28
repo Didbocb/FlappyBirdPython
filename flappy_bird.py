@@ -25,13 +25,24 @@ pipe_frequency = 800 #milliseconds
 last_pipe = pygame.time.get_ticks()
 pass_pipe = False
 score = 0
+display_start_img = True
 
 #load images
 background_img = pygame.image.load('sprites/background-day.png')
 ground_img = pygame.image.load('sprites/base.png')
+start_img = pygame.image.load('sprites/message.png')
+gameover_img = pygame.image.load('sprites/gameover.png')
 
 pygame_icon = pygame.image.load('favicon.ico')
 pygame.display.set_icon(pygame_icon)
+
+def reset_game():
+    pipe_group.empty()
+    score_group.empty()
+    flappy.rect.x = 100
+    flappy.rect.y = int(screen_height / 2)
+    score = 0
+    return score
 
 class Bird(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -168,6 +179,28 @@ class Score(pygame.sprite.Sprite):
             scoreCounterTens.image = self.images[self.indexTens]
             scoreCounterHundreds.image = self.images[self.indexHundreds]
             scoreCounterThousands.image = self.images[self.indexThousands]
+    
+class Button():
+    def __init__(self, x, y, image):
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+
+    def draw(self):
+        action = False
+
+        #get mouse position
+        pos = pygame.mouse.get_pos()
+
+        #check if mouse is over button
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1:
+                action = True
+        
+        #draw button
+        screen.blit(self.image, (self.rect.x, self.rect.y))
+
+        return action
 
 bird_group = pygame.sprite.Group()
 pipe_group = pygame.sprite.Group()
@@ -181,6 +214,8 @@ scoreCounterOnes = Score(int(screen_width / 2), 40)
 scoreCounterTens = Score(int(screen_width / 2), 40)
 scoreCounterHundreds = Score(int(screen_width / 2), 40)
 scoreCounterThousands = Score(int(screen_width / 2), 40)
+
+button = Button(screen_width // 2 - 50, screen_height // 2 - 100, gameover_img)
 
 run = True
 while run:
@@ -202,6 +237,11 @@ while run:
     screen.blit(ground_img, (ground_scroll, 512))
     screen.blit(ground_img, (ground_scroll2, 512))
 
+    # Check if the game is not started yet (display start_img)
+    if display_start_img:
+        # Draw the start_img in the center of the screen
+        screen.blit(start_img, (int(screen_width / 2) - 92, int(screen_height / 2) - 133.5))
+    
     #update the score the score
     if len(pipe_group) > 0:
         if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.left\
@@ -271,12 +311,21 @@ while run:
         #update score
         score_group.update()
 
+    #check for game over and reset
+    if game_over == True:
+        if button.draw() == True:
+            game_over = False
+            score = reset_game()
+
+
     #event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
         if event.type == pygame.MOUSEBUTTONDOWN and flying == False and game_over == False:
             flying = True
+            # Hide the start_img after clicking to start the game
+            display_start_img = False
         
     pygame.display.update()
 
